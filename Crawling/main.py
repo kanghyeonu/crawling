@@ -41,7 +41,6 @@ for i in range(1, 150000):
         try:
             newData.crawling()
             if CH.checkValue(newData) is False:
-                print('empty')
                 continue
         except:
             continue
