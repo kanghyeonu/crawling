@@ -5,15 +5,18 @@ all_char = re.compile('[^가-힣a-zA-b0-9\(\)\[\]\{\}\<\>△=;&┤│┼├|\~\-
 
 qm = re.compile('"+')
 only_eng = re.compile('[A-Za-z]{46,}]')
+full_stops = re.compile('\.{2,}')
+extensions = re.compile('\.[a-z]{2,5}]')
+texts = re.compile('/.{1,5}뉴스|연합뉴스')
 
 constraint0 = re.compile('\{.*?\}|\[.*?\]')
-constraint1 = re.compile('<.*=.*?>|<.*뉴스.*?>')
+constraint1 = re.compile('<.*?>')
 constraint2 = re.compile('&.*?;')
 constraint3 = re.compile('\(:.*?:\)|\(.*?\)')
 constraint4 = re.compile('사진=.*? ')
-constraint5 = re.compile('[가-힣 /]{3,8} 기자')
+constraint5 = re.compile('[가-힣 /]{3,20} 기자')
 constraint6 = re.compile('속보=')
-constraint7 = re.compile('([0-9]{3})?-[0-9]{3,4}-[0-9]{4}')
+constraint7 = re.compile('([0-9]{3})?-?[0-9]{3,4}-?[0-9]{4}')
 
 constraints = [constraint0, constraint1, constraint2, constraint3, constraint4, constraint5, constraint6, constraint7]
 constraints2 = ['|', '-', '+', ':', '~']
@@ -53,8 +56,9 @@ class CrawledDataHandler:
 
         if summary is None:
             summary = "None"
-
-        self.summary = self.preprocessing(summary.get_text())
+            self.summary = self.preprocessing(summary)
+        else:
+            self.summary = self.preprocessing(summary.get_text())
         self.title = self.preprocessing(title)
         self.category = self.preprocessing(category)
         self.contents = self.preprocessing(contents)
@@ -69,16 +73,19 @@ class CrawledDataHandler:
 
     def preprocessing(self, string):
         #기본적인 1차 전처리
-        fixed_str = all_char.sub(' ', string)  # 특수문자 제거
+        fixed_str = string.strip()
+        fixed_str = all_char.sub(' ', fixed_str)  # 특수문자 제거
         fixed_str = " ".join(fixed_str.split()) #다수 공백 및 문자열 양끝 공백제거
 
         #조건이 요구하는 필수 사항들 삭제
         for i in constraints:
             fixed_str = i.sub('', fixed_str)
         fixed_str = qm.sub('"', fixed_str)
+        fixed_str = full_stops.sub('', fixed_str)
+        fixed_str = texts.sub('', fixed_str)
 
         #문장 단위별로 요구 사항 삭제
-        fixed_list = list(fixed_str.split(' '))
+        fixed_list = list(fixed_str.split('. '))
         for i in range(len(fixed_list)):
             fixed_list[i] = fixed_list[i].lstrip('.')
             fixed_list[i] = fixed_list[i].lstrip('—')
@@ -86,17 +93,23 @@ class CrawledDataHandler:
             if fixed_list[i].count('학교') > 8 or fixed_list[i].count('△') > 10 or '@' in fixed_list[i]:
                 fixed_list[i] = ' '
                 continue
+            if extensions.match(fixed_list[i]):
+                fixed_list[i] = ' '
+                continue
             for j in constraints2:
                 if fixed_list[i].count(j) > 5:
                     fixed_list[i] = ' '
                     break
 
-        fixed_str = " ".join(fixed_list)
+        fixed_str = ". ".join(fixed_list)
         fixed_str = " ".join(fixed_str.split())
 
         return fixed_str
 
     # 클래스 기본 함수
+    def getUrl(self):
+        return self.url
+
     def getTitle(self):
         return self.title
 
@@ -113,7 +126,7 @@ def extract_link(url):
     list_href = []
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
-    div_list = soup.find_all("h3", class_ = "tit")
+    div_list = soup.find_all("h3", class_="tit")
     for div in div_list:
         list_href.append(div.find("a")["href"])
 
@@ -127,7 +140,7 @@ def checkValue(newValue: CrawledDataHandler) -> bool:
     if newValue.getCategory() is None:
         print('Category is empty')
         return False
-    if newValue.getContents() is None:
+    if newValue.getContents() is None or newValue.getContents() == '':
         print('Contents is empty')
         return False
     if newValue.getSummary() is None:
