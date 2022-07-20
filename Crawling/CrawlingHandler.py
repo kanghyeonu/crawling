@@ -1,7 +1,7 @@
 import requests, re
 from bs4 import BeautifulSoup
 
-all_char = re.compile('[^가-힣a-zA-b0-9\(\)\[\]\{\}\<\>△=;&┤│┼├|\~\-\+:\.@ !"\'?/#$%^&\*_\-]')
+all_char = re.compile('[^가-힣a-zA-b0-9\(\)\[\]\{\}\<\>△=;&┤│┼├|\~\-\+:\.@ !"\'?/#$%^&\*_\-,]|viewer|재무분석차트영역상세보기')
 
 qm = re.compile('"+')
 only_eng = re.compile('[A-Za-z]{46,}]')
@@ -13,7 +13,7 @@ constraint0 = re.compile('\{.*?\}|\[.*?\]')
 constraint1 = re.compile('<.*?>')
 constraint2 = re.compile('&.*?;')
 constraint3 = re.compile('\(:.*?:\)|\(.*?\)')
-constraint4 = re.compile('사진=.*? ')
+constraint4 = re.compile('사진=.{3, 5} ')
 constraint5 = re.compile('[가-힣 /]{3,20} 기자')
 constraint6 = re.compile('속보=')
 constraint7 = re.compile('([0-9]{3})?-?[0-9]{3,4}-?[0-9]{4}')
@@ -45,23 +45,30 @@ class CrawledDataHandler:
         html = response.text
         soup = BeautifulSoup(html, 'html.parser')  # html 문서로 파싱
 
-        # 한국 경제
-        figures = soup.find_all('figure')
-        for figure in figures:
-            soup.figure.extract()
-        title = soup.select_one('#container > div > div > article > h1').get_text()
-        category = soup.select_one('#wrap > header > div > div.header-section-cont > div.section-gnb-wrap > h1 > a.section-title').get_text()
-        summary = soup.select_one('#container > div > div > article > div > div > div.article-body-wrap > div.summary')
-        contents = soup.select_one("#articletxt").get_text()
+        # 서울 경제
+        # element = soup.find_all('figure')[0]
+        # print(element)
+        # elements.extend(soup.find_all('art_rel'))
+        # print(elements)
+        # elements.extend(soup.find_all('article_copy'))
+        # print(elements)
+        #for element in elements:
+        # soup.element.extract()
 
-        if summary is None:
-            summary = "None"
-            self.summary = self.preprocessing(summary)
+        title = soup.select_one('#v-left-scroll-in > div.article_head > h1').get_text()
+        category = soup.select_one('#v-left-scroll-in > div.article_head > div.sec > a:nth-child(3)').get_text()
+        summary = soup.select_one('#v-left-scroll-in > div.article_con > div.con_left > div.article_summary').get_text()
+        contents = soup.select_one("#v-left-scroll-in > div.article_con > div.con_left > div.article_view")
+
+        if contents.select('figure') is []:
+            pass
         else:
-            self.summary = self.preprocessing(summary.get_text())
+            contents.find('figure').decompose()
+
+        self.summary = self.preprocessing(summary)
         self.title = self.preprocessing(title)
         self.category = self.preprocessing(category)
-        self.contents = self.preprocessing(contents)
+        self.contents = self.preprocessing(contents.get_text())
 
         self.displayData()
 
@@ -74,7 +81,7 @@ class CrawledDataHandler:
     def preprocessing(self, string):
         #기본적인 1차 전처리
         fixed_str = string.strip()
-        fixed_str = all_char.sub(' ', fixed_str)  # 특수문자 제거
+        fixed_str = all_char.sub('', fixed_str)  # 특수문자 제거
         fixed_str = " ".join(fixed_str.split()) #다수 공백 및 문자열 양끝 공백제거
 
         #조건이 요구하는 필수 사항들 삭제
@@ -91,14 +98,14 @@ class CrawledDataHandler:
             fixed_list[i] = fixed_list[i].lstrip('—')
             fixed_list[i] = fixed_list[i].lstrip('A.')
             if fixed_list[i].count('학교') > 8 or fixed_list[i].count('△') > 10 or '@' in fixed_list[i]:
-                fixed_list[i] = ' '
+                fixed_list[i] = ''
                 continue
             if extensions.match(fixed_list[i]):
-                fixed_list[i] = ' '
+                fixed_list[i] = ''
                 continue
             for j in constraints2:
                 if fixed_list[i].count(j) > 5:
-                    fixed_list[i] = ' '
+                    fixed_list[i] = ''
                     break
 
         fixed_str = ". ".join(fixed_list)
@@ -123,26 +130,27 @@ class CrawledDataHandler:
         return self.contents
 
 def extract_link(url):
-    list_href = []
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
-    div_list = soup.find_all("h3", class_="tit")
-    for div in div_list:
-        list_href.append(div.find("a")["href"])
+    url_list = soup.find("ul", class_="sub_news_list type").find_all("li")
+    list_href = []
+    for url_ in url_list:
+        list_href.append('https://www.sedaily.com/'+url_.find("a")["href"])
 
     return list_href
 
 # 새로운 객체가 정보를 제대로 가지고 있는 지 확인
 def checkValue(newValue: CrawledDataHandler) -> bool:
-    if newValue.getTitle() is None:
+    if newValue.getTitle() is None or newValue.getTitle() == '':
         print('Title is empty')
         return False
-    if newValue.getCategory() is None:
+    if newValue.getCategory() is None or newValue.getCategory() == '':
         print('Category is empty')
         return False
     if newValue.getContents() is None or newValue.getContents() == '':
         print('Contents is empty')
         return False
-    if newValue.getSummary() is None:
-        newValue.summary = "None"
+    if newValue.getSummary() is None or newValue.getSummary() == '':
+        print('Summary is empty')
+        return False
     return True
