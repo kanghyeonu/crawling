@@ -1,19 +1,19 @@
 import requests, re
 from bs4 import BeautifulSoup
 
-all_char = re.compile('[^가-힣a-zA-b0-9\(\)\[\]\{\}\<\>△=;&┤│┼├|\~\-\+:\.@ !"?/#$%^&\*_\-,”]|viewer|재무분석차트영역상세보기')
+all_char = re.compile('[^가-힣a-zA-b0-9\(\)\[\]\{\}\<\>△=;&┤│┼├|\~\-\+:\.@ !"?/#$%\^\*_,”·]|viewer|재무분석차트영역상세보기')
 
 qm = re.compile('"+')
 only_eng = re.compile('[A-Za-z]{46,}]')
 full_stops = re.compile('\.{2,}')
 extensions = re.compile('\.[a-z]{2,5}]')
-texts = re.compile('/.{1,5}뉴스|연합뉴스')
+texts = re.compile('(/\.)?[가-힣]{1,5}뉴스')
 
 constraint0 = re.compile('\{.*?\}|\[.*?\]')
 constraint1 = re.compile('<.*?>')
 constraint2 = re.compile('&.*?;')
 constraint3 = re.compile('\(:.*?:\)|\(.*?\)')
-constraint4 = re.compile('사진=.{3, 5} ')
+constraint4 = re.compile('사진=.{3,5} ')
 constraint5 = re.compile('[가-힣 /]{3,20} 기자')
 constraint6 = re.compile('속보=')
 constraint7 = re.compile('([0-9]{3})?-?[0-9]{3,4}-?[0-9]{4}')
@@ -85,6 +85,7 @@ class CrawledDataHandler:
 
         else:
             fixed_str = string.replace("\n", " ")
+            fixed_str = fixed_str.strip()
 
         fixed_str = all_char.sub('', fixed_str)  # 특수문자 제거
         fixed_str = " ".join(fixed_str.split())  # 다수 공백 및 문자열 양끝 공백제거
@@ -99,11 +100,12 @@ class CrawledDataHandler:
         fixed_list = list(fixed_str.split('. '))
         for i in range(len(fixed_list)):
             fixed_list[i] = fixed_list[i].lstrip('.')
-            fixed_list[i] = fixed_list[i].lstrip(', ')
+            fixed_list[i] = fixed_list[i].lstrip(',')
             fixed_list[i] = fixed_list[i].lstrip('—')
             fixed_list[i] = fixed_list[i].lstrip('A.')
             fixed_list[i] = fixed_list[i].replace('"', '\\"')
             fixed_list[i] = fixed_list[i].replace("”", '\\"')
+            fixed_list[i] = fixed_list[i].replace("·", ' ')
 
             if fixed_list[i].count('학교') > 8 or fixed_list[i].count('△') > 10 or '@' in fixed_list[i]:
                 fixed_list[i] = ''
