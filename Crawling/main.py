@@ -10,13 +10,13 @@ def writeFile(fp, newData):
 
     print("File Write")
 
-    fp.write("    {\n")
-    fp.write('        "title": ' + '"' + newData.getTitle() + '",\n')
-    fp.write('        "category": ' + '"' + newData.getCategory() + '",\n')
-    fp.write('        "url": ' + '"' + newData.getUrl() + '",\n')
-    fp.write('        "summary": ' + '"' + newData.getSummary() + '",\n')
-    fp.write('        "contents": ' + '"' + newData.getContents() + '"\n')
-    fp.write("    },\n")
+    fp.write("\t{\n")
+    fp.write('\t\t"title": ' + '"' + newData.getTitle() + '",\n')
+    fp.write('\t\t"category": ' + '"' + newData.getCategory() + '",\n')
+    fp.write('\t\t"url": ' + '"' + newData.getUrl() + '",\n')
+    fp.write('\t\t"summary": ' + '"' + newData.getSummary() + '",\n')
+    fp.write('\t\t"contents": ' + '"' + newData.getContents() + '"\n')
+    fp.write("\t},\n")
 
 def closeFile(fp):
     fp.seek(fp.tell() - 3)
@@ -24,11 +24,10 @@ def closeFile(fp):
     fp.write("]")
     fp.close()
 
-base_url = "https://www.sedaily.com/NewsList/GD01/New/"
-
-for i in range(1, 701):
+base_url = "https://www.sedaily.com/NewsList/GE01/New/"
+for i in range(1, 700):
     if i == 1:
-        fp = createFile('seoulkyungje_industry'+str(i))
+        fp = createFile('seoulkyungje_politics'+str(i))
 
     url = base_url+str(i)
     extracted_url = CH.extract_link(url)

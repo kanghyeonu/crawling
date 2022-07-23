@@ -1,7 +1,7 @@
 import requests, re
 from bs4 import BeautifulSoup
 
-all_char = re.compile('[^가-힣a-zA-b0-9\(\)\[\]\{\}\<\>△=;&┤│┼├|\~\-\+:\.@ !"\'?/#$%^&\*_\-,]|viewer|재무분석차트영역상세보기')
+all_char = re.compile('[^가-힣a-zA-b0-9\(\)\[\]\{\}\<\>△=;&┤│┼├|\~\-\+:\.@ !"?/#$%^&\*_\-,”]|viewer|재무분석차트영역상세보기')
 
 qm = re.compile('"+')
 only_eng = re.compile('[A-Za-z]{46,}]')
@@ -65,7 +65,7 @@ class CrawledDataHandler:
         else:
             contents.find('figure').decompose()
 
-        self.summary = self.preprocessing(summary)
+        self.summary = self.preprocessing(summary, 0)
         self.title = self.preprocessing(title)
         self.category = self.preprocessing(category)
         self.contents = self.preprocessing(contents.get_text())
@@ -78,12 +78,16 @@ class CrawledDataHandler:
         print(self.summary)
         print(self.contents)
 
-    def preprocessing(self, string):
+    def preprocessing(self, string, default=1):
         #기본적인 1차 전처리
-        fixed_str = string.strip()
-        fixed_str = all_char.sub('', fixed_str)  # 특수문자 제거
-        fixed_str = " ".join(fixed_str.split()) #다수 공백 및 문자열 양끝 공백제거
+        if default == 1:
+            fixed_str = string.strip()
 
+        else:
+            fixed_str = string.replace("\n", " ")
+
+        fixed_str = all_char.sub('', fixed_str)  # 특수문자 제거
+        fixed_str = " ".join(fixed_str.split())  # 다수 공백 및 문자열 양끝 공백제거
         #조건이 요구하는 필수 사항들 삭제
         for i in constraints:
             fixed_str = i.sub('', fixed_str)
@@ -95,11 +99,16 @@ class CrawledDataHandler:
         fixed_list = list(fixed_str.split('. '))
         for i in range(len(fixed_list)):
             fixed_list[i] = fixed_list[i].lstrip('.')
+            fixed_list[i] = fixed_list[i].lstrip(', ')
             fixed_list[i] = fixed_list[i].lstrip('—')
             fixed_list[i] = fixed_list[i].lstrip('A.')
+            fixed_list[i] = fixed_list[i].replace('"', '\\"')
+            fixed_list[i] = fixed_list[i].replace("”", '\\"')
+
             if fixed_list[i].count('학교') > 8 or fixed_list[i].count('△') > 10 or '@' in fixed_list[i]:
                 fixed_list[i] = ''
                 continue
+            fixed_list[i] = fixed_list[i].replace("△", "")
             if extensions.match(fixed_list[i]):
                 fixed_list[i] = ''
                 continue
