@@ -24,10 +24,10 @@ def closeFile(fp):
     fp.write("]")
     fp.close()
 
-base_url = "https://www.sedaily.com/NewsList/GE01/New/"
-for i in range(1, 700):
+base_url = "https://www.sedaily.com/NewsList/GC01/New/"
+for i in range(1, 301):
     if i == 1:
-        fp = createFile('seoulkyungje_politics'+str(i))
+        fp = createFile('seoulkyungje_society'+str(i))
 
     url = base_url+str(i)
     extracted_url = CH.extract_link(url)

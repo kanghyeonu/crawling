@@ -3,11 +3,11 @@ from bs4 import BeautifulSoup
 
 all_char = re.compile('[^가-힣a-zA-b0-9\(\)\[\]\{\}\<\>△=;&┤│┼├|\~\-\+:\.@ !"?/#$%\^\*_,”·]|viewer|재무분석차트영역상세보기')
 
-qm = re.compile('"+')
+qm = re.compile('""+')
 only_eng = re.compile('[A-Za-z]{46,}]')
 full_stops = re.compile('\.{2,}')
 extensions = re.compile('\.[a-z]{2,5}]')
-texts = re.compile('(/\.)?[가-힣]{1,5}뉴스')
+texts = re.compile('(/.)?[가-힣]{1,5}뉴스')
 
 constraint0 = re.compile('\{.*?\}|\[.*?\]')
 constraint1 = re.compile('<.*?>')
@@ -17,8 +17,9 @@ constraint4 = re.compile('사진=.{3,5} ')
 constraint5 = re.compile('[가-힣 /]{3,20} 기자')
 constraint6 = re.compile('속보=')
 constraint7 = re.compile('([0-9]{3})?-?[0-9]{3,4}-?[0-9]{4}')
+constraint8 = re.compile('/ ?사진제공=')
 
-constraints = [constraint0, constraint1, constraint2, constraint3, constraint4, constraint5, constraint6, constraint7]
+constraints = [constraint0, constraint1, constraint2, constraint3, constraint4, constraint5, constraint6, constraint7, constraint8]
 constraints2 = ['|', '-', '+', ':', '~']
 
 headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'}
